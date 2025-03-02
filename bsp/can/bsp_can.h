@@ -12,6 +12,59 @@
 
 /* can instance typedef, every module registered to CAN should have this variable */
 #pragma pack(1)
+typedef struct
+{
+    uint32_t motor_id : 8; // 只占8位
+    uint32_t data : 16;
+    uint32_t mode : 5;
+    uint32_t res : 3;
+} __attribute__((packed)) EXT_ID_t; // 32位扩展ID解析结构体
+
+typedef struct
+{
+    uint32_t info : 24;
+    uint32_t communication_type : 5;
+    uint32_t res : 3;
+}__attribute__((packed)) RxCAN_info_s;// 解码内容缓存
+
+typedef struct
+{
+    uint32_t FE : 8;
+    uint32_t motor_id : 16;
+    uint32_t communication_type : 5;
+    uint32_t res : 3;
+    uint32_t MCU_id;
+}__attribute__((packed)) RxCAN_info_type_0_s;// 通信类型0解码内容
+
+typedef struct
+{
+    uint32_t master_can_id : 8;
+    uint32_t motor_id : 8;
+    uint32_t under_voltage_fault : 1;
+    uint32_t over_current_fault : 1;
+    uint32_t over_temperature_fault : 1;
+    uint32_t magnetic_encoding_fault : 1;
+    uint32_t HALL_encoding_failure : 1;
+    uint32_t unmarked : 1;
+    uint32_t mode_state : 2;
+    uint32_t communication_type : 5;
+    uint32_t res : 3;
+    float angle;//(rad)
+    float speed;//(rad/s)
+    float torque;//(N*m)
+    float temperature;//(℃)
+} __attribute__((packed)) RxCAN_info_type_2_s; // 通信类型2解码内容
+
+typedef struct
+{
+    uint32_t motor_id : 8;
+    uint32_t master_can_id : 16;
+    uint32_t communication_type : 5;
+    uint32_t res : 3;
+    uint16_t index;
+    float param;
+}__attribute__((packed)) RxCAN_info_type_17_s;// 通信类型17解码内容
+
 typedef struct _
 {
     CAN_HandleTypeDef *can_handle; // can句柄
@@ -25,7 +78,11 @@ typedef struct _
     // 接收的回调函数,用于解析接收到的数据
     void (*can_module_callback)(struct _ *); // callback needs an instance to tell among registered ones
     void *id;                                // 使用can外设的模块指针(即id指向的模块拥有此can实例,是父子关系)
-} CANInstance;
+    uint8_t ext_flag;
+    EXT_ID_t EXT_ID;
+    
+    RxCAN_info_type_2_s RxCAN_info;
+}CANInstance;
 #pragma pack()
 
 /* CAN实例初始化结构体,将此结构体指针传入注册函数 */
@@ -36,7 +93,13 @@ typedef struct
     uint32_t rx_id;                             // 接收id
     void (*can_module_callback)(CANInstance *); // 处理接收数据的回调函数
     void *id;                                   // 拥有can实例的模块地址,用于区分不同的模块(如果有需要的话),如果不需要可以不传入
+    uint8_t ext_flag;
+    EXT_ID_t EXT_ID;
+
 } CAN_Init_Config_s;
+
+
+
 
 /**
  * @brief Register a module to CAN service,remember to call this before using a CAN device

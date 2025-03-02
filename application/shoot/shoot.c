@@ -25,7 +25,7 @@ void ShootInit()
     Motor_Init_Config_s friction_config = {
         .can_init_config = 
         {
-            .can_handle = &hcan1,
+            .can_handle = &hcan2,
         },
         .controller_param_init_config = {
             .speed_PID = {
@@ -64,7 +64,7 @@ void ShootInit()
     // 拨盘电机
     Motor_Init_Config_s loader_config = {
         .can_init_config = {
-            .can_handle = &hcan1,
+            .can_handle = &hcan2,
         },
         .controller_param_init_config = {
             .speed_PID = {
@@ -128,7 +128,7 @@ static void ShootRateSet()
     // 连发模式,对速度闭环,射频后续修改为可变,目前固定为1Hz
     case LOAD_BURSTFIRE:
         DJIMotorOuterLoop(loader, SPEED_LOOP);
-        DJIMotorSetRef(loader, shoot_cmd_recv.shoot_rate * 360 * REDUCTION_RATIO_LOADER / 8);
+        DJIMotorSetRef(loader, shoot_cmd_recv.shoot_rate * 360 * REDUCTION_RATIO_LOADER );
         // x颗/秒换算成速度: 已知一圈的载弹量,由此计算出1s需要转的角度
         break;
     // 拨盘反转,对速度闭环（待测试）

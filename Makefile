@@ -132,6 +132,7 @@ modules/ist8310/ist8310.c \
 modules/master_machine/master_process.c \
 modules/master_machine/seasky_protocol.c \
 modules/motor/DJImotor/dji_motor.c \
+modules/motor/MImotor/mi_motor.c \
 modules/motor/servo_motor/servo_motor.c \
 modules/motor/motor_task.c \
 modules/referee/crc_ref.c \
@@ -243,6 +244,7 @@ C_INCLUDES =  \
 -Imodules/master_machine \
 -Imodules/motor/DJImotor \
 -Imodules/motor/servo_motor \
+-Imodules/motor/MImotor \
 -Imodules/motor \
 -Imodules/referee \
 -Imodules/remote \

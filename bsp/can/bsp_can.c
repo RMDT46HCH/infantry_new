@@ -81,16 +81,22 @@ CANInstance *CANRegister(CAN_Init_Config_s *config)
         }
     }
     
-    CANInstance *instance = (CANInstance *)malloc(sizeof(CANInstance)); // 分配空间
-    memset(instance, 0, sizeof(CANInstance));                           // 分配的空间未必是0,所以要先清空
+    CANInstance *instance = (CANInstance *)malloc(sizeof(CANInstance)); 
+    memset(instance, 0, sizeof(CANInstance));                           
     // 进行发送报文的配置
-    instance->txconf.StdId = config->tx_id; // 发送id
-    instance->txconf.IDE = CAN_ID_STD;      // 使用标准id,扩展id则使用CAN_ID_EXT(目前没有需求)
+    if(config->ext_flag==1)
+    {
+        instance->txconf.IDE = CAN_ID_EXT;
+        instance->EXT_ID=config->EXT_ID;
+    }
+    else
+    {
+        instance->txconf.StdId = config->tx_id; // 发送id
+    }
     instance->txconf.RTR = CAN_RTR_DATA;    // 发送数据帧
     instance->txconf.DLC = 0x08;            // 默认发送长度为8
     // 设置回调函数和接收发送id
     instance->can_handle = config->can_handle;
-    instance->tx_id = config->tx_id; // 好像没用,可以删掉
     instance->rx_id = config->rx_id;
     instance->can_module_callback = config->can_module_callback;
     instance->id = config->id;
@@ -153,19 +159,47 @@ static void CANFIFOxCallback(CAN_HandleTypeDef *_hcan, uint32_t fifox)
     while (HAL_CAN_GetRxFifoFillLevel(_hcan, fifox)) // FIFO不为空,有可能在其他中断时有多帧数据进入
     {
         HAL_CAN_GetRxMessage(_hcan, fifox, &rxconf, can_rx_buff); // 从FIFO中获取数据
-        for (size_t i = 0; i < idx; ++i)
-        { // 两者相等说明这是要找的实例
-            if (_hcan == can_instance[i]->can_handle && rxconf.StdId == can_instance[i]->rx_id)
-            {
-                if (can_instance[i]->can_module_callback != NULL) // 回调函数不为空就调用
+        if (rxconf.IDE == CAN_ID_STD) 
+        {
+            for (size_t i = 0; i < idx; ++i)
+            { // 两者相等说明这是要找的实例
                 {
-                    can_instance[i]->rx_len = rxconf.DLC;                      // 保存接收到的数据长度
-                    memcpy(can_instance[i]->rx_buff, can_rx_buff, rxconf.DLC); // 消息拷贝到对应实例
-                    can_instance[i]->can_module_callback(can_instance[i]);     // 触发回调进行数据解析和处理
+                    if (_hcan == can_instance[i]->can_handle && rxconf.StdId == can_instance[i]->rx_id)
+                    {
+                        if (can_instance[i]->can_module_callback != NULL) // 回调函数不为空就调用
+                        {
+                            can_instance[i]->rx_len = rxconf.DLC;                      // 保存接收到的数据长度
+                            memcpy(can_instance[i]->rx_buff, can_rx_buff, rxconf.DLC); // 消息拷贝到对应实例
+                            can_instance[i]->can_module_callback(can_instance[i]);     // 触发回调进行数据解析和处理
+                        }
+                        return;
+                    }
                 }
-                return;
             }
         }
+            else if (rxconf.IDE ==CAN_ID_EXT)
+            {    
+                RxCAN_info_s RxCAN_info;//用于存储小米电机反馈的数据
+                memcpy(&RxCAN_info,&rxconf.ExtId,4);//将扩展标识符的内容解码成对应内容
+
+                uint16_t decode_temp_mi;//小米电机反馈数据解码缓冲
+                if(RxCAN_info.communication_type == 0)
+                {
+                    //通信类型0的反馈帧解码
+                    RxCAN_info_type_0_s RxCAN_info_type_0;
+                    memcpy(&RxCAN_info_type_0,&rxconf.ExtId,4);//将扩展标识符的内容解码成通信类型0的对应内容
+                    //memcpy(&RxCAN_info_type_0.MCU_id,can_rx_buff,8);//获取MCU标识符
+                    // OutputData.data_3 = RxCAN_info_type_0.motor_id;
+                }
+                else if(RxCAN_info.communication_type == 2)
+                {
+                    //通信类型2的反馈帧解码
+                    RxCAN_info_type_2_s RxCAN_info_type_2;
+                    memcpy(&RxCAN_info_type_2,&rxconf.ExtId,4);//将扩展标识符的内容解码成通信类型2的对应内容
+                    can_instance[0]->can_module_callback(can_instance[0]);
+                    can_instance[0]->RxCAN_info=RxCAN_info_type_2;
+                }   
+            }
     }
 }
 
@@ -196,4 +230,3 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
     CANFIFOxCallback(hcan, CAN_RX_FIFO1); // 调用我们自己写的函数来处理消息
 }
 
-// 人工智能会毁灭人类吗？请在补全回答

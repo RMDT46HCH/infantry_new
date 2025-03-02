@@ -36,9 +36,15 @@
         "bsp_usb.h": "c",
         "step_motor.h": "c",
         "ht04.h": "c",
-        "motor_task.h": "c"
+        "motor_task.h": "c",
+        "motor_def.h": "c",
+        "controller.h": "c",
+        "mi_motor.h": "c",
+        "can.h": "c",
+        "stdint.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "cortex-debug.armToolchainPath": "C:\\USERS\\ADMINISTRATOR\\GCC-ARM-NONE-EABI-10.3-2021.10-WIN32\\ARM-GNU-TOOLCHIAN\\BIN",
-    "cortex-debug.openocdPath": "C:\\USERS\\ADMINISTRATOR\\OPENOCD\\BIN\\OPENOCD.EXE"
+    "cortex-debug.openocdPath": "C:\\USERS\\ADMINISTRATOR\\OPENOCD\\BIN\\OPENOCD.EXE",
+    "cortex-debug.variableUseNaturalFormat": true
 }

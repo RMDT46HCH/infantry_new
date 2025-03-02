@@ -4,8 +4,9 @@
 #include "stdio.h"
 #include "rm_referee.h"
 
-static uint8_t UI_Seq;
 // 包序号
+uint8_t UI_Seq;                                      // 包序号，供整个referee文件使用
+
 /********************************************删除操作*************************************
 **参数：_id 对应的id结构体
 		Del_Operate  对应头文件删除操作
@@ -247,7 +248,7 @@ void UIFloatDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate,
 	graph->start_angle = Graph_Size;
 	graph->end_angle = Graph_Digit;
 
-	graph->radius = Graph_Float & 0x3FF; 
+	graph->radius = Graph_Float & 0x3FF;
 	graph->end_x = (Graph_Float >> 10) & 0x7FF;
 	graph->end_y = (Graph_Float >> 21) & 0x7FF;
 }

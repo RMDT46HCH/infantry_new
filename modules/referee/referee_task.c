@@ -123,7 +123,7 @@ static void RobotModeTest(Referee_Interactive_info_t *_Interactive_data) // æµ‹è
         _Interactive_data->gimbal_mode = GIMBAL_ZERO_FORCE;
         _Interactive_data->shoot_mode = SHOOT_ON;
         _Interactive_data->friction_mode = FRICTION_ON;
-        _Interactive_data->lid_mode = LID_OPEN;
+        _Interactive_data->loader_mode = LID_OPEN;
         _Interactive_data->Chassis_Power_Data.chassis_power_mx += 3.5;
         if (_Interactive_data->Chassis_Power_Data.chassis_power_mx >= 18)
             _Interactive_data->Chassis_Power_Data.chassis_power_mx = 0;
@@ -135,7 +135,7 @@ static void RobotModeTest(Referee_Interactive_info_t *_Interactive_data) // æµ‹è
         _Interactive_data->gimbal_mode = GIMBAL_FREE_MODE;
         _Interactive_data->shoot_mode = SHOOT_OFF;
         _Interactive_data->friction_mode = FRICTION_OFF;
-        _Interactive_data->lid_mode = LID_CLOSE;
+        _Interactive_data->loader_mode = LID_CLOSE;
         break;
     }
     case 2:
@@ -144,7 +144,7 @@ static void RobotModeTest(Referee_Interactive_info_t *_Interactive_data) // æµ‹è
         _Interactive_data->gimbal_mode = GIMBAL_GYRO_MODE;
         _Interactive_data->shoot_mode = SHOOT_ON;
         _Interactive_data->friction_mode = FRICTION_ON;
-        _Interactive_data->lid_mode = LID_OPEN;
+        _Interactive_data->loader_mode = LID_CLOSE;
         break;
     }
     case 3:
@@ -153,7 +153,7 @@ static void RobotModeTest(Referee_Interactive_info_t *_Interactive_data) // æµ‹è
         _Interactive_data->gimbal_mode = GIMBAL_ZERO_FORCE;
         _Interactive_data->shoot_mode = SHOOT_OFF;
         _Interactive_data->friction_mode = FRICTION_OFF;
-        _Interactive_data->lid_mode = LID_CLOSE;
+        _Interactive_data->loader_mode = LID_CLOSE;
         break;
     }
     default:
@@ -225,11 +225,11 @@ static void MyUIRefresh(referee_info_t *referee_recv_info, Referee_Interactive_i
         _Interactive_data->Referee_Interactive_Flag.friction_flag = 0;
     }
     // lid
-    if (_Interactive_data->Referee_Interactive_Flag.lid_flag == 1)
+    if (_Interactive_data->Referee_Interactive_Flag.loader_flag == 1)
     {
-        UICharDraw(&UI_State_dyn[4], "sd4", UI_Graph_Change, 8, UI_Color_Pink, 15, 2, 270, 550, _Interactive_data->lid_mode == LID_OPEN ? "open " : "close");
+        UICharDraw(&UI_State_dyn[4], "sd4", UI_Graph_Change, 8, UI_Color_Pink, 15, 2, 270, 550, _Interactive_data->loader_mode == LID_OPEN ? "open " : "close");
         UICharRefresh(&referee_recv_info->referee_id, UI_State_dyn[4]);
-        _Interactive_data->Referee_Interactive_Flag.lid_flag = 0;
+        _Interactive_data->Referee_Interactive_Flag.loader_flag = 0;
     }
     // power
     if (_Interactive_data->Referee_Interactive_Flag.Power_flag == 1)
@@ -273,10 +273,10 @@ static void UIChangeCheck(Referee_Interactive_info_t *_Interactive_data)
         _Interactive_data->friction_last_mode = _Interactive_data->friction_mode;
     }
 
-    if (_Interactive_data->lid_mode != _Interactive_data->lid_last_mode)
+    if (_Interactive_data->loader_mode != _Interactive_data->loader_last_mode)
     {
-        _Interactive_data->Referee_Interactive_Flag.lid_flag = 1;
-        _Interactive_data->lid_last_mode = _Interactive_data->lid_mode;
+        _Interactive_data->Referee_Interactive_Flag.loader_flag = 1;
+        _Interactive_data->loader_last_mode = _Interactive_data->loader_mode;
     }
 
     if (_Interactive_data->Chassis_Power_Data.chassis_power_mx != _Interactive_data->Chassis_last_Power_Data.chassis_power_mx)

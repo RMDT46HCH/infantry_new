@@ -167,11 +167,9 @@ DJIMotorInstance *DJIMotorInit(Motor_Init_Config_s *config)
     DJIMotorInstance *instance = (DJIMotorInstance *)malloc(sizeof(DJIMotorInstance));
     memset(instance, 0, sizeof(DJIMotorInstance));
 
-    // motor basic setting 电机基本设置
     instance->motor_type = config->motor_type;                         // 6020 or 2006 or 3508
     instance->motor_settings = config->controller_setting_init_config; // 正反转,闭环类型等
 
-    // motor controller init 电机控制器初始化
     PIDInit(&instance->motor_controller.current_PID, &config->controller_param_init_config.current_PID);
     PIDInit(&instance->motor_controller.speed_PID, &config->controller_param_init_config.speed_PID);
     PIDInit(&instance->motor_controller.angle_PID, &config->controller_param_init_config.angle_PID);
@@ -179,14 +177,12 @@ DJIMotorInstance *DJIMotorInit(Motor_Init_Config_s *config)
     instance->motor_controller.other_speed_feedback_ptr = config->controller_param_init_config.other_speed_feedback_ptr;
     instance->motor_controller.current_feedforward_ptr = config->controller_param_init_config.current_feedforward_ptr;
     instance->motor_controller.speed_feedforward_ptr = config->controller_param_init_config.speed_feedforward_ptr;
-    // 后续增加电机前馈控制器(速度和电流)
 
-    // 电机分组,因为至多4个电机可以共用一帧CAN控制报文
     MotorSenderGrouping(instance, &config->can_init_config);
 
     // 注册电机到CAN总线
-    config->can_init_config.can_module_callback = DecodeDJIMotor; // set callback
-    config->can_init_config.id = instance;                        // set id,eq to address(it is identity)
+    config->can_init_config.can_module_callback = DecodeDJIMotor; 
+    config->can_init_config.id = instance;                        
     instance->motor_can_instance = CANRegister(&config->can_init_config);
 
     // 注册守护线程

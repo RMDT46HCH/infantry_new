@@ -42,6 +42,7 @@ static Robot_Status_e robot_state; // 机器人整体工作状态
 static  BuzzzerInstance *aim_success_buzzer;
 static DataLebel_t DataLebel;
 
+uint8_t gimbal_location_init=0;
 void RobotCMDInit()
 {
     rc_data = RemoteControlInit(&huart3);   // 修改为对应串口,注意如果是自研板dbus协议串口需选用添加了反相器的那个
@@ -94,9 +95,6 @@ static void CalcOffsetAngle()
 
 static void BasicSet()
 {
-    //云台基本模式设定
-    gimbal_cmd_send.gimbal_mode = GIMBAL_GYRO_MODE;
-
     // 云台软件限位
     if(gimbal_cmd_send.pitch<PITCH_MIN_ANGLE)
     gimbal_cmd_send.pitch=PITCH_MIN_ANGLE;
@@ -106,20 +104,34 @@ static void BasicSet()
     gimbal_cmd_send.pitch=gimbal_cmd_send.pitch;
 
     //发射基本模式设定
-    shoot_cmd_send.shoot_mode = SHOOT_ON;
+    shoot_cmd_send.shoot_mode = SHOOT_OFF;
     shoot_cmd_send.friction_mode = FRICTION_ON;
     shoot_cmd_send.shoot_rate=8;
     shoot_cmd_send.bullet_speed=SMALL_AMU_30;
+    
+    if(rc_data->rc.dial>200)
+    shoot_cmd_send.load_mode=LOAD_BURSTFIRE;
+    else if (rc_data->rc.dial<-200)
+    {
+        shoot_cmd_send.load_mode=LOAD_REVERSE;
+    }
+    else
+    shoot_cmd_send.load_mode=LOAD_STOP;
 }
+
 
 static void GimbalRC()
 {
+    gimbal_cmd_send.gimbal_mode = GIMBAL_GYRO_MODE;
     gimbal_cmd_send.yaw -= 0.0005f * (float)rc_data[TEMP].rc.rocker_right_x;//0
-    gimbal_cmd_send.pitch -= 0.0003f * (float)rc_data[TEMP].rc.rocker_right_y;
+    gimbal_cmd_send.pitch -= 0.0001f * (float)rc_data[TEMP].rc.rocker_right_y;
+    gimbal_cmd_send.real_pitch= (gimbal_cmd_send.pitch*57.29578-gimbal_fetch_data.init_location);
 }
 
 static void GimbalAC()
 {
+    gimbal_cmd_send.gimbal_mode = GIMBAL_GYRO_MODE;
+
     if(minipc_recv_data->Vision.yaw>1)
     {
         gimbal_cmd_send.yaw-=0.007f*minipc_recv_data->Vision.yaw;   //往右获得的yaw是减
@@ -261,14 +273,24 @@ static void MouseKeySet()
  */
 static void ControlDataDeal()
 {
-    BasicSet();
     if (switch_is_mid(rc_data[TEMP].rc.switch_right)) 
     {
+        BasicSet();
         RemoteControlSet();
     }
     else if (switch_is_up(rc_data[TEMP].rc.switch_right)) 
     {
         MouseKeySet();   
+    }
+        // 拨轮的向下拨超过一半进入急停模式.注意向打时下拨轮是正
+    if (switch_is_down(rc_data[TEMP].rc.switch_right)) // 还需添加重要应用和模块离线的判断
+    {
+        gimbal_cmd_send.gimbal_mode = GIMBAL_ZERO_FORCE;
+        chassis_cmd_send.chassis_mode = CHASSIS_ZERO_FORCE;
+        shoot_cmd_send.shoot_mode = SHOOT_OFF;
+        shoot_cmd_send.friction_mode = FRICTION_OFF;
+        shoot_cmd_send.load_mode = LOAD_STOP;
+        LOGERROR("[CMD] emergency stop!");
     }
 }
 
@@ -281,24 +303,7 @@ static void ControlDataDeal()
  */
 static void EmergencyHandler()
 {
-    // 拨轮的向下拨超过一半进入急停模式.注意向打时下拨轮是正
-    if (rc_data[TEMP].rc.dial > 300 || robot_state == ROBOT_STOP) // 还需添加重要应用和模块离线的判断
-    {
-        robot_state = ROBOT_STOP;
-        gimbal_cmd_send.gimbal_mode = GIMBAL_ZERO_FORCE;
-        chassis_cmd_send.chassis_mode = CHASSIS_ZERO_FORCE;
-        shoot_cmd_send.shoot_mode = SHOOT_OFF;
-        shoot_cmd_send.friction_mode = FRICTION_OFF;
-        shoot_cmd_send.load_mode = LOAD_STOP;
-        LOGERROR("[CMD] emergency stop!");
-    }
-    // 遥控器右侧开关为[上],恢复正常运行
-    if (switch_is_up(rc_data[TEMP].rc.switch_right))
-    {
-        robot_state = ROBOT_READY;
-        shoot_cmd_send.shoot_mode = SHOOT_ON;
-        LOGINFO("[CMD] reinstate, robot ready");
-    }
+
 }
 
 /* 机器人核心控制任务,200Hz频率运行(必须高于视觉发送频率) */

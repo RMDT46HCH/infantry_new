@@ -154,7 +154,7 @@ void DecodeMiMotor(CANInstance *_instance)
   * @param[in]      id 电机id
   * @retval         none
   */
-void MI_motor_Enable(MIMotorInstance* motor)
+void MIMotorEnable(MIMotorInstance* motor)
 {
     motor->motor_can_instace->EXT_ID.mode = 3;
     motor->motor_can_instace->EXT_ID.data = 1;
@@ -185,11 +185,15 @@ void MIMotorInstancetop(MIMotorInstance* motor)
     motor->motor_can_instace->EXT_ID.data = 1;
     motor->motor_can_instace->EXT_ID.res = 0;
     motor->motor_can_instace->txconf.ExtId= *((uint32_t*)&(motor->motor_can_instace->EXT_ID));
-
-    for(uint8_t i=0; i<8; i++)
-    {
-        motor->motor_can_instace->tx_buff[i]=0;
-    }
+    mi_sender_assignment[0].txconf.ExtId=motor->motor_can_instace->txconf.ExtId;
+    mi_sender_assignment[0].tx_buff[0]=1;
+    mi_sender_assignment[0].tx_buff[1]=0;
+    mi_sender_assignment[0].tx_buff[2]=0;
+    mi_sender_assignment[0].tx_buff[3]=0;
+    mi_sender_assignment[0].tx_buff[4]=0;
+    mi_sender_assignment[0].tx_buff[5]=0;
+    mi_sender_assignment[0].tx_buff[6]=0;
+    mi_sender_assignment[0].tx_buff[7]=0;
 }
 
 
@@ -269,7 +273,7 @@ void MI_motor_ReadParam(MIMotorInstance* motor,uint16_t index)
   * @note           通信类型18 （掉电丢失）
   * @retval         none
   */
-void MI_motor_ModeSwitch(MIMotorInstance* motor, uint8_t run_mode)
+void MIMotorModeSwitch(MIMotorInstance* motor, uint8_t run_mode)
 {
     uint16_t index = 0X7005;
 
@@ -309,7 +313,18 @@ void MI_motor_ModeSwitch(MIMotorInstance* motor, uint8_t run_mode)
 
   }
 
+void MIMotorSetPid(MIMotorInstance* motor, float location_kp,float limit_speed,float speed_kp,float speed_ki)
+{
+    MI_motor_WritePram(motor,0x7017,limit_speed);
+    MI_motor_WritePram(motor,0x701E,location_kp);
+    MI_motor_WritePram(motor,0x701F,speed_kp);
+    MI_motor_WritePram(motor,0x7020,speed_ki);
+}
 
+void MiMotorSetRef(MIMotorInstance* motor,float location_ref)
+{
+    MI_motor_WritePram(motor,0x7016,location_ref);
+}
 /*-------------------- 封装的一些控制函数 --------------------*/
 
 /**

@@ -43,6 +43,11 @@ static  BuzzzerInstance *aim_success_buzzer;
 static DataLebel_t DataLebel;
 
 uint8_t gimbal_location_init=0;
+
+
+
+
+
 void RobotCMDInit()
 {
     rc_data = RemoteControlInit(&huart3);   // 修改为对应串口,注意如果是自研板dbus协议串口需选用添加了反相器的那个
@@ -93,7 +98,7 @@ static void CalcOffsetAngle()
 #endif
 }
 
-static void BasicSet()
+static void GimbalPitchLimit()
 {
     // 云台软件限位
     if(gimbal_cmd_send.pitch<PITCH_MIN_ANGLE)
@@ -102,6 +107,10 @@ static void BasicSet()
     gimbal_cmd_send.pitch=PITCH_MAX_ANGLE;
     else
     gimbal_cmd_send.pitch=gimbal_cmd_send.pitch;
+}
+static void BasicSet()
+{
+    GimbalPitchLimit();
 
     //发射基本模式设定
     shoot_cmd_send.shoot_mode = SHOOT_OFF;
@@ -125,7 +134,7 @@ static void GimbalRC()
     gimbal_cmd_send.gimbal_mode = GIMBAL_GYRO_MODE;
     gimbal_cmd_send.yaw -= 0.0005f * (float)rc_data[TEMP].rc.rocker_right_x;//0
     gimbal_cmd_send.pitch -= 0.0001f * (float)rc_data[TEMP].rc.rocker_right_y;
-    gimbal_cmd_send.real_pitch= (gimbal_cmd_send.pitch*57.29578-gimbal_fetch_data.init_location);
+    gimbal_cmd_send.real_pitch= ((gimbal_fetch_data.gimbal_imu_data.Pitch)-gimbal_fetch_data.init_location)/57.39;
 }
 
 static void GimbalAC()
@@ -144,8 +153,8 @@ static void GimbalAC()
 
 static void ChassisRC()
 {
-    chassis_cmd_send.vx = 10.0f * (float)rc_data[TEMP].rc.rocker_left_y; // _水平方向
-    chassis_cmd_send.vy =-10.0f * (float)rc_data[TEMP].rc.rocker_left_x; // 竖直方向
+    chassis_cmd_send.vx = 30.0f * (float)rc_data[TEMP].rc.rocker_left_y; // _水平方向
+    chassis_cmd_send.vy =-30.0f * (float)rc_data[TEMP].rc.rocker_left_x; // 竖直方向
 
     if (switch_is_down(rc_data[TEMP].rc.switch_left))
     {
@@ -215,25 +224,23 @@ static void RemoteControlSet()
  */
 static void MouseKeySet()
 {
-    chassis_cmd_send.vx = rc_data[TEMP].key[KEY_PRESS].w * 300 - rc_data[TEMP].key[KEY_PRESS].s * 300; // 系数待测
-    chassis_cmd_send.vy = rc_data[TEMP].key[KEY_PRESS].s * 300 - rc_data[TEMP].key[KEY_PRESS].d * 300;
+    chassis_cmd_send.vx = rc_data[TEMP].key[KEY_PRESS].w * 10000 - rc_data[TEMP].key[KEY_PRESS].s * 10000; // 系数待测
+    chassis_cmd_send.vy = -rc_data[TEMP].key[KEY_PRESS].a * 10000 + rc_data[TEMP].key[KEY_PRESS].d * 10000;
 
-    gimbal_cmd_send.yaw += (float)rc_data[TEMP].mouse.x / 660 * 10; // 系数待测
-    gimbal_cmd_send.pitch += (float)rc_data[TEMP].mouse.y / 660 * 10;
+    gimbal_cmd_send.yaw -= (float)rc_data[TEMP].mouse.x / 660 *3 ; // 系数待测
+    gimbal_cmd_send.pitch += (float)rc_data[TEMP].mouse.y / 660/57 ;
 
-    switch (rc_data[TEMP].mouse.press_l) // 鼠标左键射击
+
+
+
+    switch (rc_data[TEMP].key_count[KEY_PRESS][Key_Q] % 2) 
     {
     case 0:
-        shoot_cmd_send.load_mode = LOAD_STOP;
+        chassis_cmd_send.chassis_mode =CHASSIS_FOLLOW_GIMBAL_YAW ;
         break;
     default:
-        shoot_cmd_send.load_mode = LOAD_1_BULLET;
-        if(chassis_fetch_data.over_heat_flag==1)
-        {
-            shoot_cmd_send.load_mode = LOAD_STOP;
-            break;
-        }
-        break;
+        chassis_cmd_send.chassis_mode =CHASSIS_ROTATE ;
+
     }
 
     switch (rc_data[TEMP].mouse.press_l) // 鼠标右键（暴走模式）

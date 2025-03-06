@@ -93,16 +93,18 @@ MIMotorInstance *MIMotorInit(Motor_Init_Config_s *config);
 
 void MI_motor_GetID(MIMotorInstance* motor);
 void DecodeMiMotor(CANInstance *_instance);
-void MI_motor_Enable(MIMotorInstance *motor);
+void MIMotorEnable(MIMotorInstance *motor);
 void MIMotorInstancetop(MIMotorInstance *motor);
 void MIMotorInstanceetMechPositionToZero(MIMotorInstance *motor);
 void MI_motor_ChangeID(MIMotorInstance* motor,uint8_t Now_ID,uint8_t Target_ID);
 void MI_motor_ReadParam(MIMotorInstance* motor, uint16_t index);
 
-
+void MIMotorModeSwitch(MIMotorInstance* motor, uint8_t run_mode);
 void MI_motor_TorqueControl(MIMotorInstance* motor, float torque);
 void MI_motor_LocationControl(MIMotorInstance* motor, float location, float kp, float kd);
 void MIMotorInstancepeedControl(MIMotorInstance* motor, float speed, float kd);
 void MiMotorControl();
+void MIMotorSetPid(MIMotorInstance* motor, float location_kp,float limit_speed,float speed_kp,float speed_ki);
+void MiMotorSetRef(MIMotorInstance* motor,float location_ref);
 
 #endif

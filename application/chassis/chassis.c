@@ -25,8 +25,8 @@ static referee_info_t* referee_data; // 用于获取裁判系统的数据
 static Referee_Interactive_info_t ui_data; // UI数据，将底盘中的数据传入此结构体的对应变量中，UI会自动检测是否变化，对应显示UI
 
 static SuperCapInstance *cap;                                       // 超级电容
+static uint16_t power_data;
 static DJIMotorInstance *motor_lf, *motor_rf, *motor_lb, *motor_rb; // left right forward back
-
 /* 用于自旋变速策略的时间变量 */
 static float t;
 
@@ -65,22 +65,34 @@ void ChassisInit()
         .motor_type = M3508,
     };
 
-    chassis_motor_config.can_init_config.tx_id = 2;
-    chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
+    chassis_motor_config.can_init_config.tx_id = 3;
+    chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_lf = DJIMotorInit(&chassis_motor_config);
 
-    chassis_motor_config.can_init_config.tx_id = 1;
-    chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
-    motor_rf = DJIMotorInit(&chassis_motor_config);
-
-    chassis_motor_config.can_init_config.tx_id = 3;
+    chassis_motor_config.can_init_config.tx_id = 2;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
-    motor_lb = DJIMotorInit(&chassis_motor_config);
+    motor_rf = DJIMotorInit(&chassis_motor_config);
 
     chassis_motor_config.can_init_config.tx_id = 4;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
+    motor_lb = DJIMotorInit(&chassis_motor_config);
+
+    chassis_motor_config.can_init_config.tx_id = 1;
+    chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
     motor_rb = DJIMotorInit(&chassis_motor_config);
-    //referee_data = UITaskInit(&huart6,&ui_data); // 裁判系统初始化,会同时初始化UI
+    referee_data = UITaskInit(&huart6,&ui_data); // 裁判系统初始化,会同时初始化UI
+
+
+    SuperCap_Init_Config_s capconfig = {
+            .can_config = {
+                .can_handle = &hcan1,
+                .rx_id = 0x311,
+                .tx_id = 0x310,
+            },
+            .recv_data_len = sizeof(int16_t),
+            .send_data_len = sizeof(uint16_t),
+        };
+     cap=SuperCapInit(&capconfig);
 
     chassis_sub = SubRegister("chassis_cmd", sizeof(Chassis_Ctrl_Cmd_s));
     chassis_pub = PubRegister("chassis_feed", sizeof(Chassis_Upload_Data_s));
@@ -117,16 +129,21 @@ static void ChassisRotateSet()
     {
         //底盘跟随就不调了，懒
         case CHASSIS_FOLLOW_GIMBAL_YAW: // 底盘不旋转,但维持全向机动,一般用于调整云台姿态
-            chassis_cmd_recv.wz = -0.01*abs(chassis_cmd_recv.offset_angle)*chassis_cmd_recv.offset_angle;
+            chassis_cmd_recv.wz =-2.0*abs(chassis_cmd_recv.offset_angle)*chassis_cmd_recv.offset_angle;
         break;
         case CHASSIS_ROTATE: // 变速小陀螺
-            chassis_cmd_recv.wz = (1200+100*(float32_t)sin(t));
+            chassis_cmd_recv.wz = (4000+100*(float32_t)sin(t));
         break;
         default:
         break;
     }
 }
 
+static void SendPowerData()
+{
+    //power_data=referee_data->GameRobotState.chassis_power_limit;
+    power_data=60;
+}
 /**
  * @brief 计算每个底盘电机的输出,正运动学解算
  *        
@@ -172,6 +189,7 @@ static void SendJudgeData()
     //to 发射
     chassis_feedback_data.bullet_speed = referee_data->GameRobotState.shooter_id1_17mm_speed_limit;
     chassis_feedback_data.rest_heat = referee_data->PowerHeatData.shooter_17mm_1_barrel_heat;
+
 }
 
 /* 机器人底盘控制核心任务 */
@@ -189,4 +207,7 @@ void ChassisTask()
     SendJudgeData();
     // 推送反馈消息
     PubPushMessage(chassis_pub, (void *)&chassis_feedback_data);
+    SendPowerData();
+
+    SuperCapSend(cap, (uint8_t*)&power_data);
 }

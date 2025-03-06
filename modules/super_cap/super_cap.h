@@ -10,6 +10,7 @@ typedef struct
     uint16_t current; // 电流
     uint16_t power; // 功率
 } SuperCap_Msg_s;
+
 #pragma pack()
 
 /* 超级电容实例 */
@@ -23,7 +24,9 @@ typedef struct
 typedef struct
 {
     CAN_Init_Config_s can_config;
-} SuperCap_Init_Config_s;
+    uint8_t send_data_len;        // 发送数据长度
+    uint8_t recv_data_len;        // 接收数据长度
+    } SuperCap_Init_Config_s;
 
 /**
  * @brief 初始化超级电容

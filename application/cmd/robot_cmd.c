@@ -178,6 +178,7 @@ static void BasicSet()
     shoot_cmd_send.shoot_mode = SHOOT_ON;
     shoot_cmd_send.friction_mode = FRICTION_ON;
     shoot_cmd_send.shoot_rate=8;
+    chassis_cmd_send.power_limit=referee_data->GameRobotState.chassis_power_limit;
 }
 
 

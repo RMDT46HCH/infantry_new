@@ -131,8 +131,10 @@ typedef struct
     float wz;           // 旋转速度
     float offset_angle; // 底盘和归中位置的夹角
     chassis_mode_e chassis_mode;
-    int chassis_speed_buff;
-
+    float chassis_rotate_buff;
+    float chassis_speed_buff;
+    uint16_t power_limit;
+    
 } Chassis_Ctrl_Cmd_s;
 
 // cmd发布的云台控制数据,由gimbal订阅

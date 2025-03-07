@@ -138,7 +138,7 @@ static void ChassisRotateSet()
 static void SendPowerData()
 {
     //power_data=referee_data->GameRobotState.chassis_power_limit;
-    power_data=60;
+    power_data=chassis_cmd_recv.power_limit;
 }
 /**
  * @brief 计算每个底盘电机的输出,正运动学解算

@@ -98,22 +98,9 @@ Minipc_Recv_s *minipcInit(UART_HandleTypeDef *_handle);
  */
 void SendMinipcData();
 
-/**
- * @brief 设置视觉发送标志位
- *
- * @param enemy_color
- * @param work_mode
- * @param bullet_speed
- */
-void VisionSetFlag();
 
-/**
- * @brief 设置发送数据的姿态部分
- *
- * @param yaw
- * @param pitch
- */
-void VisionSetAltitude(float yaw, float pitch, float roll);
+
+
 
 
 

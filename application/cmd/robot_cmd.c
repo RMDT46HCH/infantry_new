@@ -421,8 +421,6 @@ void RobotCMDTask()
     ControlDataDeal();
 
     // 设置视觉发送数据,还需增加加速度和角速度数据
-    VisionSetFlag();
-    VisionSetAltitude(gimbal_fetch_data.gimbal_imu_data.Yaw,gimbal_fetch_data.gimbal_imu_data.Pitch,gimbal_fetch_data.gimbal_imu_data.Roll);
     // 推送消息,双板通信,视觉通信等
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(shoot_cmd_pub, (void *)&shoot_cmd_send);

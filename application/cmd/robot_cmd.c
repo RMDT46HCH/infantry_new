@@ -170,18 +170,6 @@ static void VisionJudge()
         AlarmSetStatus(aim_success_buzzer, ALARM_OFF);    
     }
 }
-
-static void BasicSet()
-{
-    GimbalPitchLimit();
-    VisionJudge();
-    //发射基本模式设定
-    shoot_cmd_send.shoot_mode = SHOOT_ON;
-    shoot_cmd_send.friction_mode = FRICTION_ON;
-    shoot_cmd_send.shoot_rate=8;
-    chassis_cmd_send.power_limit=referee_data->GameRobotState.chassis_power_limit;
-}
-
 static void ChassisRotateSet()
 {
     // 根据控制模式设定旋转速度
@@ -198,6 +186,20 @@ static void ChassisRotateSet()
         break;
     }
 }
+static void BasicSet()
+{
+    GimbalPitchLimit();
+    VisionJudge();
+    ChassisRotateSet();
+
+    //发射基本模式设定
+    shoot_cmd_send.shoot_mode = SHOOT_ON;
+    shoot_cmd_send.friction_mode = FRICTION_ON;
+    shoot_cmd_send.shoot_rate=8;
+    chassis_cmd_send.power_limit=referee_data->GameRobotState.chassis_power_limit;
+}
+
+
 
 static void GimbalRC()
 {
@@ -217,7 +219,8 @@ static void ChassisRC()
 {
     chassis_cmd_send.vx = 30.0f * (float)rc_data[TEMP].rc.rocker_left_y; // _水平方向
     chassis_cmd_send.vy =-30.0f * (float)rc_data[TEMP].rc.rocker_left_x; // 竖直方向
-
+    chassis_cmd_send.chassis_rotate_buff=1;
+    chassis_cmd_send.chassis_speed_buff=1;
     if (switch_is_down(rc_data[TEMP].rc.switch_left))
     {
         chassis_cmd_send.chassis_mode=CHASSIS_FOLLOW_GIMBAL_YAW;
@@ -328,7 +331,6 @@ static void KeyControl()
     chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS].w * 10000 - rc_data[TEMP].key[KEY_PRESS].s * 10000)*chassis_cmd_send.chassis_speed_buff; 
     chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS].a * 10000 - rc_data[TEMP].key[KEY_PRESS].d * 10000)*chassis_cmd_send.chassis_speed_buff;
 
-    ChassisRotateSet();
     switch (referee_data->GameRobotState.robot_level)
     {
     case 1:
@@ -386,12 +388,6 @@ static void KeyControl()
         chassis_cmd_send.chassis_rotate_buff= chassis_rotate_buff;
     }
 
-
-
-
-
-
-
     switch (rc_data[TEMP].key_count[KEY_PRESS][Key_R] % 2) 
     {
     case 0:
@@ -410,7 +406,7 @@ static void KeyControl()
         DataLebel.reverse_flag=0;
     }
 
-    switch (rc_data[TEMP].key[KEY_PRESS].shift) // 待添加 按shift允许超功率 消耗缓冲能量
+    switch (rc_data[TEMP].key[KEY_PRESS].shift)
     {
     case 1:
             chassis_cmd_send.chassis_speed_buff= 1.4;

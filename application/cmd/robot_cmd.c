@@ -320,22 +320,6 @@ static void KeyControl()
         chassis_cmd_send.chassis_mode =CHASSIS_ROTATE;
     }
 
-    switch (rc_data[TEMP].key_count[KEY_PRESS][Key_C] % 4) // C键设置底盘速度
-    {
-    case 0:
-        chassis_cmd_send.chassis_speed_buff = 40;
-        break;
-    case 1:
-        chassis_cmd_send.chassis_speed_buff = 60;
-        break;
-    case 2:
-        chassis_cmd_send.chassis_speed_buff = 80;
-        break;
-    default:
-        chassis_cmd_send.chassis_speed_buff = 100;
-        break;
-    }
-
     if(rc_data[TEMP].key[KEY_PRESS].q)
     {
         DataLebel.reverse_flag=1;

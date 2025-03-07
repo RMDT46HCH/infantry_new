@@ -95,8 +95,9 @@ typedef enum
 
 typedef enum
 {
-    AUTO_ON=0,
-    AUTO_OFF,
+    AUTO_OFF=0,
+    AUTO_ON,
+    FIND_Enermy,
 }AutoAim_mode_e;
 // 功率限制,从裁判系统获取,是否有必要保留?
 typedef struct

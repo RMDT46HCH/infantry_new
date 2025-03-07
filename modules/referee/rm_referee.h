@@ -52,7 +52,6 @@ typedef struct
 	uint32_t gimbal_flag : 1;
 	uint32_t shoot_flag : 1;
 	uint32_t loader_flag : 1;
-	uint32_t friction_flag : 1;
 	uint32_t Power_flag : 1;
 	uint32_t aim_flag :1;
 } Referee_Interactive_Flag_t;

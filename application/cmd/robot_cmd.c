@@ -119,9 +119,7 @@ static void GimbalPitchLimit()
  */
 static void VisionJudge()
 {
-
-        //cnt1用于检测小电脑的离线，取值为[-1,1]
-
+    //cnt1用于检测小电脑的离线，取值为[-1,1]
     //在-0.1到1且小电脑未离线时，读取深度
     cnt1=sin(DWT_GetTimeline_s());
     if(cnt1>-0.1&&cnt1<1&&DataLebel.cmd_error_flag==0)
@@ -246,12 +244,16 @@ static void RemoteControlSet()
     ChassisRC();
     if(switch_is_up(rc_data[TEMP].rc.switch_left)) 
     {
-        gimbal_cmd_send.autoaim_mode=AUTO_ON;
         AutoAimSet();
         if(DataLebel.aim_flag!=1)
         {
+            gimbal_cmd_send.autoaim_mode=AUTO_ON;
             ShootRC();
             GimbalRC();
+        }
+        else
+        {
+            gimbal_cmd_send.autoaim_mode=FIND_Enermy;
         }
     }
     else
@@ -284,14 +286,21 @@ static void MouseControl()
 {
     if(rc_data[TEMP].mouse.press_r==1)
     {
-        gimbal_cmd_send.autoaim_mode=AUTO_ON;
+        if(DataLebel.aim_flag!=1)
+        {
+            gimbal_cmd_send.autoaim_mode=AUTO_ON;
+        }
+        else
+        {
+            gimbal_cmd_send.autoaim_mode=FIND_Enermy;
+        }
     }
     else
     {
         gimbal_cmd_send.autoaim_mode=AUTO_OFF;
     }
 
-    if(gimbal_cmd_send.autoaim_mode==AUTO_ON)
+    if(gimbal_cmd_send.autoaim_mode==AUTO_ON||gimbal_cmd_send.autoaim_mode==FIND_Enermy)
     {
         AutoAimSet();
         if(DataLebel.aim_flag!=1)

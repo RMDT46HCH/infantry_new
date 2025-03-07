@@ -1,13 +1,3 @@
-/**
- * @file robot_def.h
- * @author NeoZeng neozng1@hnu.edu.cn
- * @author Even
- * @version 0.1
- * @date 2022-12-02
- *
- * @copyright Copyright (c) HNU YueLu EC 2022 all rights reserved
- *
- */
 #pragma once // 可以用#pragma once代替#ifndef ROBOT_DEF_H(header guard)
 #ifndef ROBOT_DEF_H
 #define ROBOT_DEF_H
@@ -96,12 +86,6 @@ typedef enum
 
 typedef enum
 {
-    LID_OPEN = 0, // 弹舱盖打开
-    LID_CLOSE,    // 弹舱盖关闭
-} lid_mode_e;
-
-typedef enum
-{
     LOAD_STOP = 0,  // 停止发射
     LOAD_REVERSE,   // 反转
     LOAD_1_BULLET,  // 单发
@@ -109,6 +93,11 @@ typedef enum
     LOAD_BURSTFIRE, // 连发
 } loader_mode_e;
 
+typedef enum
+{
+    AUTO_ON=0,
+    AUTO_OFF,
+}AutoAim_mode_e;
 // 功率限制,从裁判系统获取,是否有必要保留?
 typedef struct
 { // 功率控制
@@ -121,25 +110,13 @@ typedef struct
     float t_shoot;
     float t_pitch;
     float t_cmd_error;
-    uint8_t vision_flag;
+    uint8_t aim_flag;
     uint8_t shoot_flag;
     uint8_t cmd_error_flag;
+    uint8_t fire_flag;
+    uint8_t reverse_flag;
 }DataLebel_t;
-/* ----------------用于计算热量用到的的结构体---------------- */
 
-typedef struct
-{
-    float last_loader_total_angle;//用于储存上一次计算时角度
-    float last_loader_total_heat_angle;//用于储存上一次计算热量时用到的角度
-    float loader_total_angle;//当前角度
-    uint8_t first_flag;//用于读取初始化电机角度
-    float rest_bullet;
-    uint16_t shoot_heat;//枪口当前热量(计算值)
-    float heat_k;//控制热量系数
-    //读取裁判系统时间间隔
-    float last_time;
-    float last_bullet_speed;
-}cal_bullet_t;
 /* ----------------CMD应用发布的控制数据,应当由gimbal/chassis/shoot订阅---------------- */
 /**
  * @brief 对于双板情况,遥控器和pc在云台,裁判系统在底盘
@@ -155,8 +132,6 @@ typedef struct
     float offset_angle; // 底盘和归中位置的夹角
     chassis_mode_e chassis_mode;
     int chassis_speed_buff;
-    // UI部分
-    //  ...
 
 } Chassis_Ctrl_Cmd_s;
 
@@ -167,18 +142,17 @@ typedef struct
     float pitch;
     float real_pitch;
     float chassis_rotate_wz;
-
+    AutoAim_mode_e autoaim_mode;
     gimbal_mode_e gimbal_mode;
+    float last_deep;
 } Gimbal_Ctrl_Cmd_s;
 
 // cmd发布的发射控制数据,由shoot订阅
 typedef struct
 {
     shoot_mode_e shoot_mode;
-    loader_mode_e load_mode;
-    lid_mode_e lid_mode;
+    loader_mode_e loader_mode;
     friction_mode_e friction_mode;
-    Bullet_Speed_e bullet_speed; // 弹速枚举
     uint8_t rest_heat;
     float shoot_rate; // 连续发射的射频,unit per s,发/秒
 } Shoot_Ctrl_Cmd_s;
@@ -197,7 +171,6 @@ typedef struct
     // float real_wz;
 
     uint8_t rest_heat;           // 剩余枪口热量
-    Bullet_Speed_e bullet_speed; // 弹速限制
     Enemy_Color_e enemy_color;   // 1 for blue, 0 for red
     uint8_t over_heat_flag;
     uint8_t cmd_error_flag;

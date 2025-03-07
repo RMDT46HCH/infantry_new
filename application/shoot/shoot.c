@@ -118,7 +118,7 @@ static void ShootStateSet()
 static void ShootRateSet()
 {
     // 若不在休眠状态,根据robotCMD传来的控制模式进行拨盘电机参考值设定和模式切换
-    switch (shoot_cmd_recv.load_mode)
+    switch (shoot_cmd_recv.loader_mode)
     {
     // 停止拨盘
     case LOAD_STOP:

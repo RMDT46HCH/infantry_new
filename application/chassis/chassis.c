@@ -3,10 +3,8 @@
 #include "dji_motor.h"
 #include "super_cap.h"
 #include "message_center.h"
-#include "referee_task.h"
 #include "general_def.h"
 #include "bsp_dwt.h"
-#include "referee_UI.h"
 #include "arm_math.h"
 
 /* 根据robot_def.h中的macro自动计算的参数 */
@@ -21,8 +19,7 @@ static Chassis_Ctrl_Cmd_s chassis_cmd_recv;         // 底盘接收到的控制�
 static Chassis_Upload_Data_s chassis_feedback_data; // 底盘回传的反馈数据
 static float sin_theta, cos_theta;//麦轮解算用
 
-static referee_info_t* referee_data; // 用于获取裁判系统的数据
-static Referee_Interactive_info_t ui_data; // UI数据，将底盘中的数据传入此结构体的对应变量中，UI会自动检测是否变化，对应显示UI
+
 
 static SuperCapInstance *cap;                                       // 超级电容
 static uint16_t power_data;
@@ -80,7 +77,6 @@ void ChassisInit()
     chassis_motor_config.can_init_config.tx_id = 1;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
     motor_rb = DJIMotorInit(&chassis_motor_config);
-    referee_data = UITaskInit(&huart6,&ui_data); // 裁判系统初始化,会同时初始化UI
 
 
     SuperCap_Init_Config_s capconfig = {
@@ -178,20 +174,6 @@ static void LimitChassisOutput()
     DJIMotorSetRef(motor_rb, vt_rb);
 }
 
-/**
- * @brief 靠这个函数将裁判系统发给发布中心，再通过发布中心发布给各个执行机构
-
- */
-static void SendJudgeData()
-{
-    //to 视觉
-    chassis_feedback_data.enemy_color = referee_data->GameRobotState.robot_id > 7 ? COLOR_RED : COLOR_BLUE; 
-    //to 发射
-    chassis_feedback_data.bullet_speed = referee_data->GameRobotState.shooter_id1_17mm_speed_limit;
-    chassis_feedback_data.rest_heat = referee_data->PowerHeatData.shooter_17mm_1_barrel_heat;
-
-}
-
 /* 机器人底盘控制核心任务 */
 void ChassisTask()
 {
@@ -203,8 +185,6 @@ void ChassisTask()
 
     // 根据裁判系统的反馈数据和电容数据对输出限幅并设定闭环参考值
     LimitChassisOutput();
-    //发送裁判系统信息给发布中心
-    SendJudgeData();
     // 推送反馈消息
     PubPushMessage(chassis_pub, (void *)&chassis_feedback_data);
     SendPowerData();

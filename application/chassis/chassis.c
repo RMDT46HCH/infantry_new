@@ -117,23 +117,7 @@ static void ChassisStateSet()
     }
 }
 
-static void ChassisRotateSet()
-{
-    t = (float32_t)DWT_GetTimeline_s();//用于变速小陀螺
-    // 根据控制模式设定旋转速度
-    switch (chassis_cmd_recv.chassis_mode)
-    {
-        //底盘跟随就不调了，懒
-        case CHASSIS_FOLLOW_GIMBAL_YAW: // 底盘不旋转,但维持全向机动,一般用于调整云台姿态
-            chassis_cmd_recv.wz =-2.0*abs(chassis_cmd_recv.offset_angle)*chassis_cmd_recv.offset_angle;
-        break;
-        case CHASSIS_ROTATE: // 变速小陀螺
-            chassis_cmd_recv.wz = (4000+100*(float32_t)sin(t));
-        break;
-        default:
-        break;
-    }
-}
+
 
 static void SendPowerData()
 {
@@ -173,7 +157,6 @@ void ChassisTask()
 {
     SubGetMessage(chassis_sub, &chassis_cmd_recv);
     ChassisStateSet();
-    ChassisRotateSet();
     // 根据控制模式进行正运动学解算,计算底盘输出
     MecanumCalculate();
 

@@ -46,7 +46,8 @@ static  BuzzzerInstance *aim_success_buzzer;
 static DataLebel_t DataLebel;
 
 uint8_t gimbal_location_init=0;
-
+static float chassis_rotate_buff;
+static float chassis_speed_buff;
 static referee_info_t* referee_data; // 用于获取裁判系统的数据
 static Referee_Interactive_info_t ui_data; // UI数据，将底盘中的数据传入此结构体的对应变量中，UI会自动检测是否变化，对应显示UI
 static float cnt1,cnt2; 
@@ -181,6 +182,22 @@ static void BasicSet()
     chassis_cmd_send.power_limit=referee_data->GameRobotState.chassis_power_limit;
 }
 
+static void ChassisRotateSet()
+{
+    // 根据控制模式设定旋转速度
+    switch (chassis_cmd_send.chassis_mode)
+    {
+        //底盘跟随就不调了，懒
+        case CHASSIS_FOLLOW_GIMBAL_YAW: // 底盘不旋转,但维持全向机动,一般用于调整云台姿态
+            chassis_cmd_send.wz =-2.0*abs(chassis_cmd_send.offset_angle)*chassis_cmd_send.offset_angle;
+        break;
+        case CHASSIS_ROTATE: // 变速小陀螺
+            chassis_cmd_send.wz = 4000*chassis_cmd_send.chassis_rotate_buff;
+        break;
+        default:
+        break;
+    }
+}
 
 static void GimbalRC()
 {
@@ -308,8 +325,72 @@ static void MouseControl()
 
 static void KeyControl()
 {
-    chassis_cmd_send.vx = rc_data[TEMP].key[KEY_PRESS].w * 10000 - rc_data[TEMP].key[KEY_PRESS].s * 10000; 
-    chassis_cmd_send.vy = rc_data[TEMP].key[KEY_PRESS].a * 10000 - rc_data[TEMP].key[KEY_PRESS].d * 10000;
+    chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS].w * 10000 - rc_data[TEMP].key[KEY_PRESS].s * 10000)*chassis_cmd_send.chassis_speed_buff; 
+    chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS].a * 10000 - rc_data[TEMP].key[KEY_PRESS].d * 10000)*chassis_cmd_send.chassis_speed_buff;
+
+    ChassisRotateSet();
+    switch (referee_data->GameRobotState.robot_level)
+    {
+    case 1:
+        chassis_rotate_buff = 1;
+        chassis_speed_buff  = 1;
+        break;
+    case 2:         
+        chassis_rotate_buff = 1.2;
+        chassis_speed_buff  = 1.03;
+        break;
+    case 3:
+        chassis_rotate_buff = 1.3;
+        chassis_speed_buff  = 1.05;
+        break;
+    case 4:
+        chassis_rotate_buff = 1.4;
+        chassis_speed_buff  = 1.1;
+        break;
+    case 5:
+        chassis_rotate_buff = 1.5;
+        chassis_speed_buff  = 1.15;
+        break;
+    case 6:
+        chassis_rotate_buff = 1.6;
+        chassis_speed_buff  = 1.2;
+        break;
+    case 7:
+        chassis_rotate_buff = 1.7;
+        chassis_speed_buff  = 1.25;
+        break;
+    case 8:
+        chassis_rotate_buff = 1.8;
+        chassis_speed_buff  = 1.3;
+        break;
+    case 9:
+        chassis_rotate_buff = 1.9;
+        chassis_speed_buff  = 1.35;
+        break;
+    case 10:
+        chassis_rotate_buff = 2;
+        chassis_speed_buff  = 1.4;
+        break;
+    default:
+        chassis_rotate_buff = 1;
+        chassis_speed_buff  = 1;
+        break;
+    }
+
+    if(chassis_fetch_data.power_flag==1)
+    {
+        chassis_cmd_send.chassis_rotate_buff= 2;
+    }
+    else
+    {
+        chassis_cmd_send.chassis_rotate_buff= chassis_rotate_buff;
+    }
+
+
+
+
+
+
 
     switch (rc_data[TEMP].key_count[KEY_PRESS][Key_R] % 2) 
     {
@@ -332,8 +413,10 @@ static void KeyControl()
     switch (rc_data[TEMP].key[KEY_PRESS].shift) // 待添加 按shift允许超功率 消耗缓冲能量
     {
     case 1:
+            chassis_cmd_send.chassis_speed_buff= 1.4;
         break;
     default:
+        chassis_cmd_send.chassis_speed_buff= chassis_speed_buff;
         break;
     }
 }

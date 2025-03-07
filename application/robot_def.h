@@ -176,7 +176,7 @@ typedef struct
     Enemy_Color_e enemy_color;   // 1 for blue, 0 for red
     uint8_t over_heat_flag;
     uint8_t cmd_error_flag;
-
+    uint8_t power_flag;
 } Chassis_Upload_Data_s;
 
 

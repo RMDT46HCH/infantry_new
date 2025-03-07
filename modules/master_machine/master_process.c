@@ -8,16 +8,13 @@ static Minipc_Recv_s minipc_recv_data;
 static Minipc_Send_s minipc_send_data;
 static DaemonInstance *minipc_daemon_instance;
 
-void VisionSetFlag()
+void VisionSetFlag(uint8_t color)
 {
-    minipc_send_data.Vision.detect_color=0;
+    minipc_send_data.Vision.detect_color=color;
 }
 
-void VisionSetAltitude(float yaw, float pitch, float roll)
+void VisionSetAltitude(uint8_t color)
 {
-    minipc_send_data.Vision.yaw = yaw;
-    minipc_send_data.Vision.pitch = pitch;
-    minipc_send_data.Vision.roll = roll;
 }
 
 static USARTInstance *minipc_usart_instance;

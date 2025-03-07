@@ -45,12 +45,14 @@ static Robot_Status_e robot_state; // 机器人整体工作状态
 static  BuzzzerInstance *aim_success_buzzer;
 static DataLebel_t DataLebel;
 
-uint8_t gimbal_location_init=0;
+static uint8_t gimbal_location_init=0;
+static uint8_t power_flag;
 
 static referee_info_t* referee_data; // 用于获取裁判系统的数据
 static Referee_Interactive_info_t ui_data; // UI数据，将底盘中的数据传入此结构体的对应变量中，UI会自动检测是否变化，对应显示UI
 static float cnt1,cnt2; 
-
+static float chassis_rotate_buff;
+static float chassis_speed_buff;
 
 void RobotCMDInit()
 {
@@ -72,7 +74,11 @@ void RobotCMDInit()
         .octave=OCTAVE_2,
     };
     aim_success_buzzer= BuzzerRegister(&aim_success_buzzer_config);
+
+
+
 }
+
 
 /**
  * @brief 根据gimbal app传回的当前电机角度计算和零位的误差
@@ -176,6 +182,7 @@ static void BasicSet()
     shoot_cmd_send.shoot_mode = SHOOT_ON;
     shoot_cmd_send.friction_mode = FRICTION_ON;
     shoot_cmd_send.shoot_rate=8;
+    chassis_cmd_send.power_limit=referee_data->GameRobotState.chassis_power_limit;
 }
 
 
@@ -206,6 +213,25 @@ static void ChassisRC()
         chassis_cmd_send.chassis_mode=CHASSIS_ROTATE;
 }
 
+static void ChassisRotateSet()
+{
+    // 根据控制模式设定旋转速度
+    switch (chassis_cmd_send.chassis_mode)
+    {
+        //底盘跟随就不调了，懒
+        case CHASSIS_FOLLOW_GIMBAL_YAW: // 底盘不旋转,但维持全向机动,一般用于调整云台姿态
+            chassis_cmd_send.wz =-2.0*abs(chassis_cmd_send.offset_angle)*chassis_cmd_send.offset_angle;
+        break;
+        case CHASSIS_ROTATE: // 变速小陀螺
+            chassis_cmd_send.wz = 4000*chassis_cmd_send.chassis_rotate_buff;
+        break;
+        default:
+        break;
+    }
+}
+
+
+
 static void AutoAimSet()
 {
     if(DataLebel.aim_flag==1)
@@ -217,6 +243,7 @@ static void AutoAimSet()
         }
     }
 }
+
 static void ShootRC()
 {
     if(rc_data->rc.dial>200)
@@ -258,6 +285,7 @@ static void RemoteControlSet()
     }
     else
     {
+        gimbal_cmd_send.autoaim_mode=AUTO_OFF;
         GimbalRC();
         ShootRC();
     }
@@ -284,6 +312,7 @@ static void NoneAutoMouseControl()
 }
 static void MouseControl()
 {
+    DataLebel.aim_flag=0;
     if(rc_data[TEMP].mouse.press_r==1)
     {
         if(DataLebel.aim_flag!=1)
@@ -316,8 +345,71 @@ static void MouseControl()
 
 static void KeyControl()
 {
-    chassis_cmd_send.vx = rc_data[TEMP].key[KEY_PRESS].w * 10000 - rc_data[TEMP].key[KEY_PRESS].s * 10000; 
-    chassis_cmd_send.vy = rc_data[TEMP].key[KEY_PRESS].a * 10000 - rc_data[TEMP].key[KEY_PRESS].d * 10000;
+    chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS].w * 20000 - rc_data[TEMP].key[KEY_PRESS].s * 20000)*chassis_speed_buff; 
+    chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS].d * 20000 - rc_data[TEMP].key[KEY_PRESS].a * 20000)*chassis_speed_buff;
+
+    ChassisRotateSet();
+    switch (referee_data->GameRobotState.robot_level)
+    {
+    case 1:
+        chassis_rotate_buff = 1;
+        chassis_speed_buff  = 1;
+        break;
+    case 2:         
+        chassis_rotate_buff = 1.2;
+        chassis_speed_buff  = 1.03;
+        break;
+    case 3:
+        chassis_rotate_buff = 1.3;
+        chassis_speed_buff  = 1.05;
+        break;
+    case 4:
+        chassis_rotate_buff = 1.4;
+        chassis_speed_buff  = 1.1;
+        break;
+    case 5:
+        chassis_rotate_buff = 1.5;
+        chassis_speed_buff  = 1.15;
+        break;
+    case 6:
+        chassis_rotate_buff = 1.6;
+        chassis_speed_buff  = 1.2;
+        break;
+    case 7:
+        chassis_rotate_buff = 1.7;
+        chassis_speed_buff  = 1.25;
+        break;
+    case 8:
+        chassis_rotate_buff = 1.8;
+        chassis_speed_buff  = 1.3;
+        break;
+    case 9:
+        chassis_rotate_buff = 1.9;
+        chassis_speed_buff  = 1.35;
+        break;
+    case 10:
+        chassis_rotate_buff = 2;
+        chassis_speed_buff  = 1.4;
+        break;
+    default:
+        chassis_rotate_buff = 1;
+        chassis_speed_buff  = 1;
+        break;
+    }
+
+    if(chassis_fetch_data.power_flag==1)
+    {
+        chassis_cmd_send.chassis_rotate_buff= 2;
+    }
+    else
+    {
+        chassis_cmd_send.chassis_rotate_buff= chassis_rotate_buff;
+    }
+
+
+
+
+
 
     switch (rc_data[TEMP].key_count[KEY_PRESS][Key_R] % 2) 
     {
@@ -328,25 +420,10 @@ static void KeyControl()
         chassis_cmd_send.chassis_mode =CHASSIS_ROTATE;
     }
 
-    switch (rc_data[TEMP].key_count[KEY_PRESS][Key_C] % 4) // C键设置底盘速度
-    {
-    case 0:
-        chassis_cmd_send.chassis_speed_buff = 40;
-        break;
-    case 1:
-        chassis_cmd_send.chassis_speed_buff = 60;
-        break;
-    case 2:
-        chassis_cmd_send.chassis_speed_buff = 80;
-        break;
-    default:
-        chassis_cmd_send.chassis_speed_buff = 100;
-        break;
-    }
-
     if(rc_data[TEMP].key[KEY_PRESS].q)
     {
         DataLebel.reverse_flag=1;
+        shoot_cmd_send.loader_mode = LOAD_REVERSE;
     }
     else
     {
@@ -356,6 +433,7 @@ static void KeyControl()
     switch (rc_data[TEMP].key[KEY_PRESS].shift) // 待添加 按shift允许超功率 消耗缓冲能量
     {
     case 1:
+        chassis_cmd_send.chassis_speed_buff= 2;
         break;
     default:
         break;
@@ -410,13 +488,26 @@ static void ControlDataDeal()
     }
 }
 
+static void EnemyJudge()
+{
+    if(referee_data->GameRobotState.robot_id>7)
+    {
+        minipc_send_data.Vision.detect_color = COLOR_RED;
+    }
+    else
+    {
+        minipc_send_data.Vision.detect_color = COLOR_BLUE;
+    }
+}
 static void SendToUIData()
 {
     ui_data.autoaim_mode=gimbal_cmd_send.autoaim_mode;
     ui_data.chassis_mode=chassis_cmd_send.chassis_mode;
     ui_data.loader_mode=shoot_cmd_send.loader_mode;
     ui_data.shoot_mode=shoot_cmd_send.shoot_mode;
+    ui_data.gimbal_mode=gimbal_cmd_send.gimbal_mode;
 }
+
 
 /* 机器人核心控制任务,200Hz频率运行(必须高于视觉发送频率) */
 void RobotCMDTask()
@@ -430,12 +521,11 @@ void RobotCMDTask()
     ControlDataDeal();
 
     // 设置视觉发送数据,还需增加加速度和角速度数据
-    VisionSetFlag();
-    VisionSetAltitude(gimbal_fetch_data.gimbal_imu_data.Yaw,gimbal_fetch_data.gimbal_imu_data.Pitch,gimbal_fetch_data.gimbal_imu_data.Roll);
     // 推送消息,双板通信,视觉通信等
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(shoot_cmd_pub, (void *)&shoot_cmd_send);
     PubPushMessage(gimbal_cmd_pub, (void *)&gimbal_cmd_send);
     SendMinipcData(&minipc_send_data);
     SendToUIData();
+
 }

@@ -162,13 +162,6 @@ static void ShootSpeedSet()
     }
 }
 
-static void JudgeCmdError()
-{
-    if(friction_l->measure.real_current==0||friction_r->measure.real_current==0)
-    shoot_feedback_data.cmd_error_flag=0;
-    else
-    shoot_feedback_data.cmd_error_flag=1;
-}
 
 static void SendShootData()
 {
@@ -186,8 +179,6 @@ void ShootTask()
     ShootRateSet();
     //射速设定
     ShootSpeedSet();
-    //模块离线检测
-    //JudgeCmdError();
     //给发布中心电机实际情况，从而调节拨盘电机的模式
     SendShootData();
     // 反馈数据,用于卡弹反馈（后续再加个模块离线）

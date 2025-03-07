@@ -37,7 +37,6 @@ referee_info_t *UITaskInit(UART_HandleTypeDef *referee_usart_handle, Referee_Int
 
 void UITask()
 {
-    RobotModeTest(Interactive_data);
     MyUIRefresh(referee_recv_info, Interactive_data);
 }
 
@@ -176,7 +175,6 @@ static void RobotModeTest(Referee_Interactive_info_t *_Interactive_data) // æµ‹è
 static void MyUIRefresh(referee_info_t *referee_recv_info, Referee_Interactive_info_t *_Interactive_data)
 {
     UIChangeCheck(_Interactive_data);
-    /*
     // chassis
     if (_Interactive_data->Referee_Interactive_Flag.chassis_flag == 1)
     {
@@ -200,7 +198,6 @@ static void MyUIRefresh(referee_info_t *referee_recv_info, Referee_Interactive_i
         UIGraphRefresh(&referee_recv_info->referee_id,1,UI_State_Cir[0]);
         _Interactive_data->Referee_Interactive_Flag.chassis_flag = 0;
     }
-    */
 
     // gimbal
     if (_Interactive_data->Referee_Interactive_Flag.gimbal_flag == 1)
@@ -287,7 +284,6 @@ static void MyUIRefresh(referee_info_t *referee_recv_info, Referee_Interactive_i
         _Interactive_data->Referee_Interactive_Flag.loader_flag = 0;
     }
 
-/*
     if (_Interactive_data->Referee_Interactive_Flag.aim_flag == 1)
     {
         switch (_Interactive_data->autoaim_mode)
@@ -319,7 +315,6 @@ static void MyUIRefresh(referee_info_t *referee_recv_info, Referee_Interactive_i
         UIGraphRefresh(&referee_recv_info->referee_id,1,UI_State_Rec[0]);
         _Interactive_data->Referee_Interactive_Flag.aim_flag = 0;
     }
-    */
 }
 
 /**

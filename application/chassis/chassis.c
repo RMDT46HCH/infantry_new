@@ -19,7 +19,7 @@ static Chassis_Ctrl_Cmd_s chassis_cmd_recv;         // 底盘接收到的控制�
 static Chassis_Upload_Data_s chassis_feedback_data; // 底盘回传的反馈数据
 static float sin_theta, cos_theta;//麦轮解算用
 
-
+static float chassis_rotate_buff;
 
 static SuperCapInstance *cap;                                       // 超级电容
 static uint16_t power_data;
@@ -78,7 +78,6 @@ void ChassisInit()
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
     motor_rb = DJIMotorInit(&chassis_motor_config);
 
-
     SuperCap_Init_Config_s capconfig = {
             .can_config = {
                 .can_handle = &hcan1,
@@ -89,11 +88,7 @@ void ChassisInit()
             .send_data_len = sizeof(uint16_t),
         };
      cap=SuperCapInit(&capconfig);
-
-    chassis_sub = SubRegister("chassis_cmd", sizeof(Chassis_Ctrl_Cmd_s));
-    chassis_pub = PubRegister("chassis_feed", sizeof(Chassis_Upload_Data_s));
 }
-
 #define LF_CENTER ((HALF_TRACK_WIDTH + CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE - CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
 #define RF_CENTER ((HALF_TRACK_WIDTH - CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE - CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
 #define LB_CENTER ((HALF_TRACK_WIDTH + CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE + CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
@@ -117,29 +112,11 @@ static void ChassisStateSet()
     }
 }
 
-static void ChassisRotateSet()
-{
-    t = (float32_t)DWT_GetTimeline_s();//用于变速小陀螺
-    // 根据控制模式设定旋转速度
-    switch (chassis_cmd_recv.chassis_mode)
-    {
-        //底盘跟随就不调了，懒
-        case CHASSIS_FOLLOW_GIMBAL_YAW: // 底盘不旋转,但维持全向机动,一般用于调整云台姿态
-            chassis_cmd_recv.wz =-2.0*abs(chassis_cmd_recv.offset_angle)*chassis_cmd_recv.offset_angle;
-        break;
-        case CHASSIS_ROTATE: // 变速小陀螺
-            chassis_cmd_recv.wz = (4000+100*(float32_t)sin(t));
-        break;
-        default:
-        break;
-    }
-}
-
 static void SendPowerData()
 {
-    //power_data=referee_data->GameRobotState.chassis_power_limit;
-    power_data=60;
+    power_data=chassis_cmd_recv.power_limit;
 }
+
 /**
  * @brief 计算每个底盘电机的输出,正运动学解算
  *        
@@ -163,9 +140,15 @@ static void MecanumCalculate()
  */
 static void LimitChassisOutput()
 {
-    // 功率限制待添加
-    // referee_data->PowerHeatData.chassis_power;
-    // referee_data->PowerHeatData.chassis_power_buffer;
+
+    if(cap->cap_msg.vol<24&&cap->cap_msg.vol>13)
+    {
+        chassis_feedback_data.power_flag=1; 
+    }
+    else
+    {
+        chassis_feedback_data.power_flag=0; 
+    }
 
     // 完成功率限制后进行电机参考输入设定
     DJIMotorSetRef(motor_lf, vt_lf);
@@ -179,7 +162,6 @@ void ChassisTask()
 {
     SubGetMessage(chassis_sub, &chassis_cmd_recv);
     ChassisStateSet();
-    ChassisRotateSet();
     // 根据控制模式进行正运动学解算,计算底盘输出
     MecanumCalculate();
 
@@ -187,7 +169,7 @@ void ChassisTask()
     LimitChassisOutput();
     // 推送反馈消息
     PubPushMessage(chassis_pub, (void *)&chassis_feedback_data);
-    SendPowerData();
-
+        SendPowerData();
     SuperCapSend(cap, (uint8_t*)&power_data);
+
 }

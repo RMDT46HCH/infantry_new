@@ -116,11 +116,7 @@ static void GimbalStateSet()
     }
 }
 
-static void JudgeCmdError()
-{
 
-
-}
 
 static void SendGimbalData()
 {
@@ -137,8 +133,6 @@ void GimbalTask()
     GimbalStateSet();
     // 设置反馈数据,主要是imu和yaw的ecd
     SendGimbalData();
-    //模块离线检测
-    //JudgeCmdError();    
     // 推送消息
     PubPushMessage(gimbal_pub, (void *)&gimbal_feedback_data);
 }

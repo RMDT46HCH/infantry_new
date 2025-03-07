@@ -410,6 +410,17 @@ static void SendToUIData()
     ui_data.shoot_mode=shoot_cmd_send.shoot_mode;
 }
 
+static void JudgeEnermy()
+{
+    if(referee_data->GameRobotState.robot_id>7)
+    {
+        minipc_send_data.Vision.detect_color=COLOR_RED;
+    }
+    else
+    {
+        minipc_send_data.Vision.detect_color=COLOR_BLUE;
+    }
+}
 /* 机器人核心控制任务,200Hz频率运行(必须高于视觉发送频率) */
 void RobotCMDTask()
 {

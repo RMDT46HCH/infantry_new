@@ -137,7 +137,6 @@ static void ChassisRotateSet()
 
 static void SendPowerData()
 {
-    //power_data=referee_data->GameRobotState.chassis_power_limit;
     power_data=chassis_cmd_recv.power_limit;
 }
 /**
@@ -163,11 +162,6 @@ static void MecanumCalculate()
  */
 static void LimitChassisOutput()
 {
-    // 功率限制待添加
-    // referee_data->PowerHeatData.chassis_power;
-    // referee_data->PowerHeatData.chassis_power_buffer;
-
-    // 完成功率限制后进行电机参考输入设定
     DJIMotorSetRef(motor_lf, vt_lf);
     DJIMotorSetRef(motor_rf, vt_rf);
     DJIMotorSetRef(motor_lb, vt_lb);

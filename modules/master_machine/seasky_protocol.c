@@ -72,13 +72,6 @@ void get_protocol_send_Vision_data(uint16_t send_id,        // 信号id
     tx_buf[0] = SEND_VISION_ID;
     /*数据段*/
     tx_buf[1] =tx_data->Vision.detect_color;
-    memcpy(&tx_data->Vision.roll, &tx_buf[2], sizeof(float));
-    memcpy(&tx_data->Vision.pitch, &tx_buf[6], sizeof(float));
-    memcpy(&tx_data->Vision.yaw, &tx_buf[10], sizeof(float));
-    /*整包校验*/
-    crc16 = crc_16(&tx_buf[0], data_len - 2); // 不包括最后两个字节的校验和
-    tx_buf[data_len - 2] = crc16 & 0xff; // 低位在前
-    tx_buf[data_len - 1] = (crc16 >> 8) & 0xff; // 高位在后
     *tx_buf_len = data_len ;
     //tx_buf[1] = data_len & 0xff;        // 低位在前
     //tx_buf[2] = (data_len >> 8) & 0xff; // 低位在前

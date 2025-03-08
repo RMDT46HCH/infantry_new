@@ -176,11 +176,11 @@ static void ChassisRotateSet()
     switch (chassis_cmd_send.chassis_mode)
     {
         //底盘跟随就不调了，懒
-        case CHASSIS_FOLLOW_GIMBAL_YAW: // 底盘不旋转,但维持全向机动,一般用于调整云台姿态
+        case CHASSIS_FOLLOW_GIMBAL_YAW: 
             chassis_cmd_send.wz =-2.0*abs(chassis_cmd_send.offset_angle)*chassis_cmd_send.offset_angle;
         break;
         case CHASSIS_ROTATE: // 变速小陀螺
-            chassis_cmd_send.wz = 4000*chassis_cmd_send.chassis_rotate_buff;
+            chassis_cmd_send.wz = 2600*chassis_cmd_send.chassis_rotate_buff;
         break;
         default:
         break;
@@ -328,8 +328,17 @@ static void MouseControl()
 
 static void KeyControl()
 {
-    chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS].w * 10000 - rc_data[TEMP].key[KEY_PRESS].s * 10000)*chassis_cmd_send.chassis_speed_buff; 
-    chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS].a * 10000 - rc_data[TEMP].key[KEY_PRESS].d * 10000)*chassis_cmd_send.chassis_speed_buff;
+    chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS].w * 10000 - rc_data[TEMP].key[KEY_PRESS].s * 10500)*chassis_cmd_send.chassis_speed_buff; 
+    chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS].a * 10000 - rc_data[TEMP].key[KEY_PRESS].d * 10500)*chassis_cmd_send.chassis_speed_buff;
+
+    if(chassis_fetch_data.vol>16&&chassis_fetch_data.vol<23)
+    {
+        chassis_fetch_data.power_flag=1;
+    }
+    else
+    {
+        chassis_fetch_data.power_flag=0;
+    }
 
     switch (referee_data->GameRobotState.robot_level)
     {
@@ -338,54 +347,45 @@ static void KeyControl()
         chassis_speed_buff  = 1;
         break;
     case 2:         
-        chassis_rotate_buff = 1.2;
-        chassis_speed_buff  = 1.03;
+        chassis_rotate_buff = 1.09;
+        chassis_speed_buff  = 1.09;
         break;
     case 3:
-        chassis_rotate_buff = 1.3;
-        chassis_speed_buff  = 1.05;
+        chassis_rotate_buff = 1.16;
+        chassis_speed_buff  = 1.16;
         break;
     case 4:
-        chassis_rotate_buff = 1.4;
-        chassis_speed_buff  = 1.1;
+        chassis_rotate_buff = 1.21;
+        chassis_speed_buff  = 1.21;
         break;
     case 5:
-        chassis_rotate_buff = 1.5;
-        chassis_speed_buff  = 1.15;
-        break;
-    case 6:
-        chassis_rotate_buff = 1.6;
-        chassis_speed_buff  = 1.2;
-        break;
-    case 7:
-        chassis_rotate_buff = 1.7;
-        chassis_speed_buff  = 1.25;
-        break;
-    case 8:
-        chassis_rotate_buff = 1.8;
+        chassis_rotate_buff = 1.23;
         chassis_speed_buff  = 1.3;
         break;
+    case 6:
+        chassis_rotate_buff = 1.3;
+        chassis_speed_buff  = 1.4;
+        break;
+    case 7:
+        chassis_rotate_buff = 1.38;
+        chassis_speed_buff  = 1.52;
+        break;
+    case 8:
+        chassis_rotate_buff = 1.45;
+        chassis_speed_buff  = 1.6;
+        break;
     case 9:
-        chassis_rotate_buff = 1.9;
-        chassis_speed_buff  = 1.35;
+        chassis_rotate_buff = 1.55;
+        chassis_speed_buff  = 1.72;
         break;
     case 10:
-        chassis_rotate_buff = 2;
-        chassis_speed_buff  = 1.4;
+        chassis_rotate_buff = 1.7;
+        chassis_speed_buff  = 1.81;
         break;
     default:
         chassis_rotate_buff = 1;
         chassis_speed_buff  = 1;
         break;
-    }
-
-    if(chassis_fetch_data.power_flag==1)
-    {
-        chassis_cmd_send.chassis_rotate_buff= 2;
-    }
-    else
-    {
-        chassis_cmd_send.chassis_rotate_buff= chassis_rotate_buff;
     }
 
     switch (rc_data[TEMP].key_count[KEY_PRESS][Key_R] % 2) 
@@ -408,11 +408,46 @@ static void KeyControl()
 
     switch (rc_data[TEMP].key[KEY_PRESS].shift)
     {
-    case 1:
-            chassis_cmd_send.chassis_speed_buff= 1.4;
+        case 1:
+        {
+            if(chassis_fetch_data.power_flag==1)
+            {
+                if(referee_data->GameRobotState.robot_level<=5)
+                {
+                    chassis_cmd_send.chassis_speed_buff= 1.55;
+                    chassis_cmd_send.chassis_rotate_buff= 1.4;
+                }
+                else if (referee_data->GameRobotState.robot_level>5)
+                {
+                    chassis_cmd_send.chassis_speed_buff =chassis_speed_buff+0.25;
+                    chassis_cmd_send.chassis_rotate_buff=chassis_rotate_buff+ 0.2;
+                }
+            }
+            else
+            {
+                chassis_cmd_send.chassis_speed_buff= chassis_speed_buff+0.2;
+            }
+        }   
         break;
     default:
-        chassis_cmd_send.chassis_speed_buff= chassis_speed_buff;
+        if(chassis_fetch_data.power_flag==1)
+        {
+            if(referee_data->GameRobotState.robot_level<=5)
+            {
+                chassis_cmd_send.chassis_speed_buff= 1.35;
+                chassis_cmd_send.chassis_rotate_buff= 1.4;
+            }
+            else if (referee_data->GameRobotState.robot_level>5)
+            {
+                chassis_cmd_send.chassis_speed_buff =chassis_speed_buff+0.05;
+                chassis_cmd_send.chassis_rotate_buff=chassis_rotate_buff+ 0.2;
+            }
+        }
+        else
+        {
+            chassis_cmd_send.chassis_rotate_buff= chassis_rotate_buff;
+            chassis_cmd_send.chassis_speed_buff= chassis_speed_buff;
+        }
         break;
     }
 }
@@ -471,6 +506,7 @@ static void SendToUIData()
     ui_data.chassis_mode=chassis_cmd_send.chassis_mode;
     ui_data.loader_mode=shoot_cmd_send.loader_mode;
     ui_data.shoot_mode=shoot_cmd_send.shoot_mode;
+    ui_data.chassis_power_data.cap_vol=chassis_fetch_data.vol;
 }
 
 static void JudgeEnermy()

@@ -121,7 +121,14 @@ static void ChassisStateSet()
 
 static void SendPowerData()
 {
-    power_data=chassis_cmd_recv.power_limit;
+    if(cap->cap_msg.vol<18)
+    power_data=chassis_cmd_recv.power_limit+10;
+    else
+    {
+        power_data=chassis_cmd_recv.power_limit;
+    }
+    
+    chassis_feedback_data.vol=cap->cap_msg.vol;
 }
 /**
  * @brief 计算每个底盘电机的输出,正运动学解算

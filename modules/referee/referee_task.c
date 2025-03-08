@@ -114,6 +114,19 @@ void MyUIInit()
 
     UIRectangleDraw(&UI_State_Rec[0], "sr0", UI_Graph_ADD, 6, UI_Color_White,3,600,300,1320,800);
     UIGraphRefresh(&referee_recv_info->referee_id,1, UI_State_Rec[0]);
+
+    // 底盘功率显示，静态
+    UICharDraw(&UI_State_sta[8], "ss8", UI_Graph_ADD, 7, UI_Color_Green, 18, 2, 620, 230, "vol:");
+    UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[8]);
+    // 能量条框
+    UIRectangleDraw(&UI_Energy[0], "ss9", UI_Graph_ADD, 7, UI_Color_Green, 2, 720, 140, 1220, 180);
+    UIGraphRefresh(&referee_recv_info->referee_id, 1, UI_Energy[0]);
+
+    // 底盘功率显示,动态
+    UIFloatDraw(&UI_Energy[1], "sd5", UI_Graph_ADD, 8, UI_Color_Green, 18, 2, 2,750, 230, 24000);
+    // 能量条初始状态
+    UILineDraw(&UI_Energy[2], "sd6", UI_Graph_ADD, 8, UI_Color_Green, 30, 720, 160, 1200, 160);
+    UIGraphRefresh(&referee_recv_info->referee_id, 2, UI_Energy[1], UI_Energy[2]);
 }
 
 // 测试用函数，实现模式自动变化,用于检查该任务和裁判系统是否连接正常
@@ -315,6 +328,28 @@ static void MyUIRefresh(referee_info_t *referee_recv_info, Referee_Interactive_i
         UIGraphRefresh(&referee_recv_info->referee_id,1,UI_State_Rec[0]);
         _Interactive_data->Referee_Interactive_Flag.aim_flag = 0;
     }
+        // power
+    if (_Interactive_data->Referee_Interactive_Flag.Power_flag == 1)
+    {
+        if(_Interactive_data->chassis_power_data.cap_vol>=18)
+        {
+            UIFloatDraw(&UI_Energy[1], "sd5", UI_Graph_Change, 8, UI_Color_Green, 18, 2, 2,750, 230, (float)_Interactive_data->chassis_power_data.cap_vol*1000);
+            UILineDraw(&UI_Energy[2], "sd6", UI_Graph_Change, 8, UI_Color_Green, 30, 720, 160, (uint32_t)720 + (_Interactive_data->chassis_power_data.cap_vol-14) * 60, 160);
+        }
+        else if(_Interactive_data->chassis_power_data.cap_vol>=16&&_Interactive_data->chassis_power_data.cap_vol<18)
+        {
+            UIFloatDraw(&UI_Energy[1], "sd5", UI_Graph_Change, 8, UI_Color_Yellow, 18, 2,2, 750, 230, (float)_Interactive_data->chassis_power_data.cap_vol*1000);
+            UILineDraw(&UI_Energy[2], "sd6", UI_Graph_Change, 8, UI_Color_Yellow, 30, 720, 160, (uint32_t)720 + (_Interactive_data->chassis_power_data.cap_vol-14) * 60, 160);
+        }
+        else if (_Interactive_data->chassis_power_data.cap_vol>=14&&_Interactive_data->chassis_power_data.cap_vol<16)
+        {
+            UIFloatDraw(&UI_Energy[1], "sd5", UI_Graph_Change, 8, UI_Color_Purplish_red, 18, 2,2, 750,230, (float)_Interactive_data->chassis_power_data.cap_vol*1000);
+
+            UILineDraw(&UI_Energy[2], "sd6", UI_Graph_Change, 8, UI_Color_Purplish_red, 30, 720, 160, (uint32_t)720 + (_Interactive_data->chassis_power_data.cap_vol-14) * 60, 160);
+        }
+        UIGraphRefresh(&referee_recv_info->referee_id, 2, UI_Energy[1], UI_Energy[2]);
+        _Interactive_data->Referee_Interactive_Flag.Power_flag = 0;
+    }
 }
 
 /**
@@ -353,5 +388,10 @@ static void UIChangeCheck(Referee_Interactive_info_t *_Interactive_data)
     {
         _Interactive_data->Referee_Interactive_Flag.aim_flag = 1;
         _Interactive_data->autoaim_last_mode = _Interactive_data->autoaim_mode;
+    }
+    if (_Interactive_data->chassis_power_data.cap_vol != _Interactive_data->chassis_last_power_data.cap_vol)
+    {
+        _Interactive_data->Referee_Interactive_Flag.Power_flag = 1;
+        _Interactive_data->chassis_power_data.cap_vol = _Interactive_data->chassis_last_power_data.cap_vol;
     }
 }

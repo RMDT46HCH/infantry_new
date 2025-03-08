@@ -102,7 +102,7 @@ typedef enum
 // 功率限制,从裁判系统获取,是否有必要保留?
 typedef struct
 { // 功率控制
-    float chassis_power_mx;
+    uint16_t cap_vol;;
 } Chassis_Power_Data_s;
 
 /* ----------------用于记录时间或标志位的结构体---------------- */
@@ -178,6 +178,7 @@ typedef struct
     uint8_t over_heat_flag;
     uint8_t cmd_error_flag;
     uint8_t power_flag;
+    uint16_t vol;
 } Chassis_Upload_Data_s;
 
 

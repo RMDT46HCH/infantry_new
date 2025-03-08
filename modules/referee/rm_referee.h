@@ -67,16 +67,16 @@ typedef struct
 	shoot_mode_e shoot_mode;				 // 发射模式设置
 	loader_mode_e loader_mode;			 	// 拨盘模式
 	AutoAim_mode_e autoaim_mode;
-	Chassis_Power_Data_s Chassis_Power_Data; // 功率控制
-
+	Chassis_Power_Data_s chassis_power_data;
+	
 	// 上一次的模式，用于flag判断
 	chassis_mode_e chassis_last_mode;
 	gimbal_mode_e gimbal_last_mode;
 	shoot_mode_e shoot_last_mode;
 	loader_mode_e loader_last_mode;
 	AutoAim_mode_e autoaim_last_mode;
+	Chassis_Power_Data_s chassis_last_power_data;
 
-	Chassis_Power_Data_s Chassis_last_Power_Data;
 
 } Referee_Interactive_info_t;
 
